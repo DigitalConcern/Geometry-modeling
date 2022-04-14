@@ -1145,6 +1145,63 @@ const Data = {
         const M_ctr = eval(this.M_ctr.value);
         const N = eval(this.N.value);
         const M = eval(this.M.value);
+        
+        let vec_u = new Array(N_ctr)
+        let vec_v = new Array(M_ctr)
+        let su = 0
+        let sv = 0
+
+        let bar_u = new Array(N_ctr)
+        let bar_v = new Array(N_ctr)
+        for (i = 0; i < N_ctr; i++) {
+            bar_u[i] = new Array(M_ctr)
+            bar_v[i] = new Array(M_ctr)
+        }
+
+        if (this.chordal.checked || this.centripetal.checked) {
+            for (i = 0; i < N_ctr; i++)
+                for (j = 0; j < M_ctr; j++) {
+                    if (i == 0)
+                        bar_u[i][j] = 0.0;
+                    else {
+                        bar_u[i][j] = Math.hypot(
+                            this.pointsCtr[i][j].x - this.pointsCtr[i-1][j].x,
+                            this.pointsCtr[i][j].y - this.pointsCtr[i-1][j].y);
+                        if (this.centripetal.checked) {
+                            bar_u[i][j] = Math.sqrt(bar_u[i][j])
+                        }
+                    }
+                    if (j==0)
+                        bar_v[i][j] = 0.0;
+                    else {
+                        bar_v[i][j] = Math.hypot(
+                            this.pointsCtr[i][j].x - this.pointsCtr[i][j - 1].x,
+                            this.pointsCtr[i][j].y - this.pointsCtr[i][j - 1].y);
+                        if (this.centripetal.checked) {
+                            bar_v[i][j] = Math.sqrt(bar_v[i][j])
+                        }
+                    }
+                }
+
+            for (i = 0; i < N_ctr; i++) {
+                vec_u[i] = 0.0;
+                for (j = 0; j < M_ctr; j++) {
+                    vec_u[i] += bar_u[i][j]
+                }
+                vec_u[i] /= M_ctr
+                su += vec_u[i]
+            }
+        
+            for (j = 0; j < M_ctr; j++) {
+                vec_v[j] = 0.0;
+                for (i = 0; i < N_ctr; i++) {
+                    vec_v[j] += bar_v[i][j]
+                }
+                vec_v[j] /= N_ctr
+                sv += vec_v[j]
+            }
+        }
+        
 
         // INITIALIZE PARAMETRIC COORDINATES
         for (i = 0; i < N_ctr; i++) {
@@ -1153,11 +1210,23 @@ const Data = {
                     this.pointsCtr[i][j].u = i / (N_ctr - 1);
                     this.pointsCtr[i][j].v = j / (M_ctr - 1);
                 } else if (this.chordal.checked) {
-                    this.pointsCtr[i][j].u = u;
-                    this.pointsCtr[i][j].v = v;
+                    if (i==0) 
+                        this.pointsCtr[i][j].u = 0.0;
+                    else
+                        this.pointsCtr[i][j].u = this.pointsCtr[i - 1][j].u + vec_u[i] / su;
+                    if (j == 0)
+                        this.pointsCtr[i][j].v = 0.0;
+                    else
+                        this.pointsCtr[i][j].v = this.pointsCtr[i][j - 1].v + vec_v[j] / sv;
                 } else if (this.centripetal.checked) {
-                    this.pointsCtr[i][j].u = u;
-                    this.pointsCtr[i][j].v = v;
+                    if (i==0) 
+                        this.pointsCtr[i][j].u = 0.0;
+                    else
+                        this.pointsCtr[i][j].u = this.pointsCtr[i - 1][j].u + vec_u[i] / su;
+                    if (j == 0)
+                        this.pointsCtr[i][j].v = 0.0;
+                    else
+                        this.pointsCtr[i][j].v = this.pointsCtr[i][j - 1].v + vec_v[j] / sv;
                 }
             }
         }
@@ -1232,6 +1301,7 @@ const Data = {
 
 
                 const pt = new Point(x, y, z);
+                // console.log(x, y, z)
                 this.pointsSpline[i][j] = pt;
 
                 //      //CALCULATE TANGENT VECTORS
