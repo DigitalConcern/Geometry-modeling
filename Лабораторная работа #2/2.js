@@ -1,5 +1,5 @@
 // 2.js
-
+// hello world!
 "use strict";
 
 // Vertex shader program

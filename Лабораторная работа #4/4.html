@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Draw ruled surface</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+
+<body onload="main()" oncontextmenu="return false;">
+    <div class="canvas">
+    <canvas id="webgl" width="800" height="600">
+    Please use a browser that supports "canvas"
+    </canvas>
+    </div>
+    <div class="parameters">
+
+    <fieldset>
+        <legend>Ruled surface parameters</legend>
+        <fieldset>
+            <legend>Area Bounds</legend>
+            <div><label for="Xmin"> Xmin:</label>
+            <input type="text" id="Xmin" value="0.0" size="10"></div>
+            <div><label for="Xmax"> Xmax:</label>
+            <input type="text" id="Xmax" value="3 * Math.PI" size="10"></div>
+            <div><label for="Ymin"> Ymin:</label>
+            <input type="text" id="Ymin" value="0.0" size="10"></div>
+            <div><label for="Ymax"> Ymax:</label>
+            <input type="text" id="Ymax" value="3 * Math.PI" size="10"></div>
+            <div><label for="Z"> Z:</label>
+            <input type="text" id="Z" value="1.5" size="10"></div>
+        </fieldset>
+        <div><label for="chkRuledSurface"> Ruled surface:</label>
+        <input type="checkbox" id="chkRuledSurface"></div>
+        <fieldset>
+            <legend>Count ruled surface points</legend>
+            <div><label for="N"> N:</label>
+            <input type="text" id="N" value="100" maxlength="3" size="3"></div>
+            <div><label for="M"> M:</label>
+            <input type="text" id="M" value="2" maxlength="3" size="3"></div>
+        </fieldset>
+        <fieldset>
+            <legend>Visualize with</legend>
+            <div><label for="chkVisualizeWithPoints"> points:</label>
+            <input type="checkbox" id="chkVisualizeWithPoints" checked></div>
+            <div><label for="chkVisualizeWithLines"> coordinate lines:</label>
+            <input type="checkbox" id="chkVisualizeWithLines"></div>
+            <div><label for="chkVisualizeWithSurface"> surface:</label>
+            <input type="checkbox" id="chkVisualizeWithSurface"></div>
+            <div><label for="alpha"> alpha:</label>
+            <input type="text" id="alpha" value="0.6" maxlength="4" size="4"></div>
+        </fieldset>
+    </fieldset>
+    </div>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="../lib/gl-matrix-min.js"></script>
+    <script src="../lib/client.js"></script>
+    <script src="../lib/EventUtil.js"></script>
+    <script src="4.js"></script>
+  </body>
+</html>
