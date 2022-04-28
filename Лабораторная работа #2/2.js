@@ -1096,7 +1096,6 @@ const Data = {
             if (this.visualizeSplineWithSurface) {
                 this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBufferSplineSurface);
                 this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, this.indicesSplineSurface, this.gl.DYNAMIC_DRAW);
-
                 this.gl.uniform1f(this.u_drawPolygon, true);
                 this.gl.depthMask(false);
                 this.gl.enable(this.gl.BLEND);
@@ -1146,6 +1145,64 @@ const Data = {
         const N = eval(this.N.value);
         const M = eval(this.M.value);
 
+        let bar_u = new Array(N_ctr);
+        let bar_v = new Array(N_ctr);
+        for (i = 0; i < N; i++) {
+            bar_u[i] = new Array(M_ctr);
+            bar_v[i] = new Array(M_ctr);
+        }
+        let u_av = new Array(N_ctr);
+        let su = 0;
+        let v_av = new Array(M_ctr);
+        let sv = 0;
+
+        if ((this.chordal.checked) || (this.centripetal.checked)) {
+            for (i = 0; i < N_ctr; i++) {
+                for (j = 0; j < M_ctr; j++) {
+                    if (i == 0) {
+                        bar_u[i][j] = 0.0;
+                    } else {
+                        bar_u[i][j] = Math.hypot(
+                            this.pointsCtr[i][j].x - this.pointsCtr[i - 1][j].x,
+                                    this.pointsCtr[i][j].y - this.pointsCtr[i - 1][j].y
+                        );
+
+                    }
+                    if (j == 0) {
+                        bar_v[i][j] = 0.0;
+                    } else {
+                        bar_v[i][j] = Math.hypot(
+                            this.pointsCtr[i][j].x - this.pointsCtr[i][j - 1].x,
+                            this.pointsCtr[i][j].y - this.pointsCtr[i][j - 1].y
+                        );
+
+                    }
+                }
+            }
+
+            //
+            for (i = 0; i < N_ctr; i++) {
+                u_av[i] = 0.0;
+                for (j = 0; j < M_ctr; j++) {
+                    u_av[i] += bar_u[i][j];
+                }
+                u_av[i] /= M_ctr;
+                su += u_av[i];
+            }
+
+            for (j = 0; j < M_ctr; j++) {
+                v_av[j] = 0.0;
+                for (i = 0; i < N_ctr; i++) {
+                    v_av[j] += bar_v[i][j];
+                }
+                v_av[j] /= N_ctr;
+                sv += v_av[j];
+            }
+            //
+
+        }
+
+
         // INITIALIZE PARAMETRIC COORDINATES
         for (i = 0; i < N_ctr; i++) {
             for (j = 0; j < M_ctr; j++) {
@@ -1153,8 +1210,18 @@ const Data = {
                     this.pointsCtr[i][j].u = i / (N_ctr - 1);
                     this.pointsCtr[i][j].v = j / (M_ctr - 1);
                 } else if (this.chordal.checked) {
-                    this.pointsCtr[i][j].u = u;
-                    this.pointsCtr[i][j].v = v;
+                    if (i == 0) {
+                        this.pointsCtr[i][j].u = 0.0;
+                    } else {
+                        this.pointsCtr[i][j].u = this.pointsCtr[i - 1][j].u + u_av[i] / su;
+                    }
+                    if (j == 0) {
+                        this.pointsCtr[i][j].v = 0.0;
+                    } else {
+                        this.pointsCtr[i][j].v = this.pointsCtr[i][j - 1].v + v_av[j] / sv;
+                    }
+
+
                 } else if (this.centripetal.checked) {
                     this.pointsCtr[i][j].u = u;
                     this.pointsCtr[i][j].v = v;
@@ -1181,12 +1248,18 @@ const Data = {
                 u = i * du;
                 v = j * dv;
 
-                while (u > this.pointsCtr[ii + 1][jj].u) {
+
+
+                while ((u > this.pointsCtr[ii + 1][jj].u) && (ii+1<N_ctr-1)) {
                     ii++;
+                    // if (ii > N_ctr-2)
+                    //     debugger;
                 }
 
-                while (v > this.pointsCtr[ii][jj + 1].v) {
+                while ((v > this.pointsCtr[ii][jj + 1].v)&& (jj+1<M_ctr-1)) {
                     jj++;
+                    // if (jj > M_ctr-1)
+                    //     debugger;
                 }
                 // CALCULATE SPLINE COORDINATES
                 omega = (u - this.pointsCtr[ii][jj].u) / (this.pointsCtr[ii + 1][jj].u - this.pointsCtr[ii][jj].u)
@@ -1207,28 +1280,27 @@ const Data = {
                 const y0_dif_omega = 0;
                 const z0_dif_omega = 0;
 
-                const x0_dif_xi = this.pointsCtr[ii][jj].x * (-1) + this.pointsCtr[ii][jj + 1].x ;
-                const y0_dif_xi = this.pointsCtr[ii][jj].y * (-1) + this.pointsCtr[ii][jj + 1].y ;
-                const z0_dif_xi = this.pointsCtr[ii][jj].z * (-1) + this.pointsCtr[ii][jj + 1].z ;
+                const x0_dif_xi = this.pointsCtr[ii][jj].x * (-1) + this.pointsCtr[ii][jj + 1].x;
+                const y0_dif_xi = this.pointsCtr[ii][jj].y * (-1) + this.pointsCtr[ii][jj + 1].y;
+                const z0_dif_xi = this.pointsCtr[ii][jj].z * (-1) + this.pointsCtr[ii][jj + 1].z;
 
                 const x1_dif_omega = 0;
                 const y1_dif_omega = 0;
                 const z1_dif_omega = 0;
 
-                const x1_dif_xi=this.pointsCtr[ii + 1][jj].x * (-1) + this.pointsCtr[ii + 1][jj + 1].x * 1;
-                const y1_dif_xi=this.pointsCtr[ii + 1][jj].x * (-1) + this.pointsCtr[ii + 1][jj + 1].x * 1;
-                const z1_dif_xi=this.pointsCtr[ii + 1][jj].x * (-1) + this.pointsCtr[ii + 1][jj + 1].x * 1;
+                const x1_dif_xi = this.pointsCtr[ii + 1][jj].x * (-1) + this.pointsCtr[ii + 1][jj + 1].x * 1;
+                const y1_dif_xi = this.pointsCtr[ii + 1][jj].x * (-1) + this.pointsCtr[ii + 1][jj + 1].x * 1;
+                const z1_dif_xi = this.pointsCtr[ii + 1][jj].x * (-1) + this.pointsCtr[ii + 1][jj + 1].x * 1;
 
 
-                const x_dif_omega = (x0_dif_omega * (1 - omega) + x0 * (-1) + x1_dif_omega * omega+x1)/(this.pointsCtr[ii + 1][jj].u - this.pointsCtr[ii][jj].u) ;
-                const x_dif_xi = (x0_dif_xi * (1 - omega)  + x1_dif_xi * omega)/(this.pointsCtr[ii][jj + 1].v - this.pointsCtr[ii][jj].v) ;
+                const x_dif_omega = (x0_dif_omega * (1 - omega) + x0 * (-1) + x1_dif_omega * omega + x1) / (this.pointsCtr[ii + 1][jj].u - this.pointsCtr[ii][jj].u);
+                const x_dif_xi = (x0_dif_xi * (1 - omega) + x1_dif_xi * omega) / (this.pointsCtr[ii][jj + 1].v - this.pointsCtr[ii][jj].v);
 
-                const y_dif_omega = (y0_dif_omega * (1 - omega) + y0 * (-1) + y1_dif_omega * omega+y1)/(this.pointsCtr[ii + 1][jj].u - this.pointsCtr[ii][jj].u) ;
-                const y_dif_xi = (y0_dif_xi * (1 - omega)  + y1_dif_xi * omega)/(this.pointsCtr[ii][jj + 1].v - this.pointsCtr[ii][jj].v) ;
+                const y_dif_omega = (y0_dif_omega * (1 - omega) + y0 * (-1) + y1_dif_omega * omega + y1) / (this.pointsCtr[ii + 1][jj].u - this.pointsCtr[ii][jj].u);
+                const y_dif_xi = (y0_dif_xi * (1 - omega) + y1_dif_xi * omega) / (this.pointsCtr[ii][jj + 1].v - this.pointsCtr[ii][jj].v);
 
-                const z_dif_omega = (z0_dif_omega * (1 - omega) + z0 * (-1) + z1_dif_omega * omega+z1)/(this.pointsCtr[ii + 1][jj].u - this.pointsCtr[ii][jj].u) ;
-                const z_dif_xi = (z0_dif_xi * (1 - omega)  + z1_dif_xi * omega)/(this.pointsCtr[ii][jj + 1].v - this.pointsCtr[ii][jj].v) ;
-
+                const z_dif_omega = (z0_dif_omega * (1 - omega) + z0 * (-1) + z1_dif_omega * omega + z1) / (this.pointsCtr[ii + 1][jj].u - this.pointsCtr[ii][jj].u);
+                const z_dif_xi = (z0_dif_xi * (1 - omega) + z1_dif_xi * omega) / (this.pointsCtr[ii][jj + 1].v - this.pointsCtr[ii][jj].v);
 
 
                 const pt = new Point(x, y, z);
@@ -1243,16 +1315,16 @@ const Data = {
                 //      const y_v = ;
                 //      const z_v = ;
 
-                      const pt_u = vec3.fromValues(x_dif_omega, y_dif_omega,z_dif_omega);
-                      const pt_v = vec3.fromValues(x_dif_xi, y_dif_xi, z_dif_xi);
+                const pt_u = vec3.fromValues(x_dif_omega, y_dif_omega, z_dif_omega);
+                const pt_v = vec3.fromValues(x_dif_xi, y_dif_xi, z_dif_xi);
 
                 //      //CALCULATE NORMAL VECTOR
-                     const normal = vec3.create();
-                     vec3.cross(normal,pt_u,pt_v);
+                const normal = vec3.create();
+                vec3.cross(normal, pt_u, pt_v);
 
-                     this.normalsSpline[i][j][0] =normal[0];
-                     this.normalsSpline[i][j][1] = normal[1];
-                     this.normalsSpline[i][j][2] = normal[2];
+                this.normalsSpline[i][j][0] = normal[0];
+                this.normalsSpline[i][j][1] = normal[1];
+                this.normalsSpline[i][j][2] = normal[2];
             }
         }
 
