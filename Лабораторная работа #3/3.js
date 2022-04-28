@@ -673,23 +673,26 @@ const Data = {
         let k = this.pointsCtr.length - 1;
         for (i = 0; i<this.pointsCtr.length; i++){
             if (this.uniform.checked)
-                this.pointsCtr[i].t = k*i / (this.pointsCtr.length - 1);
+                this.pointsCtr[i].t = i / (this.pointsCtr.length - 1);
             else if (this.chordal.checked || this.centripetal.checked){
                 if(i == 0){
                     this.pointsCtr[i].t = 0;
                 }
                 else if(i == (this.pointsCtr.length - 1)){
-                    this.pointsCtr[i].t = k;
+                    this.pointsCtr[i].t = 1;
                 }
                 else{
                     if(!this.centripetal.checked){
-                        this.pointsCtr[i].t = k*(this.pointsCtr[i - 1].t + Math.hypot(this.pointsCtr[i].x - this.pointsCtr[i - 1].x, this.pointsCtr[i].y - this.pointsCtr[i - 1].y))/d;
+                        this.pointsCtr[i].t = this.pointsCtr[i - 1].t + Math.hypot(this.pointsCtr[i].x - this.pointsCtr[i - 1].x, this.pointsCtr[i].y - this.pointsCtr[i - 1].y)/d;
                     }
                     else{
-                        this.pointsCtr[i].t = k*(this.pointsCtr[i - 1].t + Math.sqrt(Math.hypot(this.pointsCtr[i].x - this.pointsCtr[i - 1].x, this.pointsCtr[i].y - this.pointsCtr[i - 1].y)))/d;
+                        this.pointsCtr[i].t = this.pointsCtr[i - 1].t + Math.sqrt(Math.hypot(this.pointsCtr[i].x - this.pointsCtr[i - 1].x, this.pointsCtr[i].y - this.pointsCtr[i - 1].y))/d;
                     }
                 }
             }
+        }
+        for (i = 0; i<this.pointsCtr.length; i++){
+            this.pointsCtr[i].t=k* this.pointsCtr[i].t;
         }
         i = 0;
         const N = this.countSplinePoints.value;
@@ -698,12 +701,12 @@ const Data = {
         t = 0;
         for(j = 0; j<N; j++){
             omega = (t - this.pointsCtr[i].t) / (this.pointsCtr[i+1].t - this.pointsCtr[i].t);
-            Ax = -2*(this.pointsCtr[i+1].x-this.pointsCtr[i].x)/(this.pointsCtr[i+1].t - this.pointsCtr[i].t) + (this.mPointsCtr[i].x + this.mPointsCtr[i + 1].x);
-            Ay = -2*(this.pointsCtr[i+1].y - this.pointsCtr[i].y)/(this.pointsCtr[i+1].t - this.pointsCtr[i].t) + (this.mPointsCtr[i].y + this.mPointsCtr[i + 1].y);
-            Bx = -Ax + (this.pointsCtr[i+1].x-this.pointsCtr[i].x)/(this.pointsCtr[i+1].t - this.pointsCtr[i].t) - this.mPointsCtr[i].x;
-            By = -Ay + (this.pointsCtr[i+1].y-this.pointsCtr[i].y)/(this.pointsCtr[i+1].t - this.pointsCtr[i].t) - this.mPointsCtr[i].y;
-            x = this.pointsCtr[i].x + (t - this.pointsCtr[i].t)*(this.mPointsCtr[i].x + omega*(Bx + omega * Ax));
-            y = this.pointsCtr[i].y + (t - this.pointsCtr[i].t)*(this.mPointsCtr[i].y + omega*(By + omega * Ay));;
+            Ax = -2*(this.pointsCtr[i+1].x-this.pointsCtr[i].x)/(this.pointsCtr[i+1].t - this.pointsCtr[i].t) + (this.mCtr[i].x + this.mCtr[i + 1].x);
+            Ay = -2*(this.pointsCtr[i+1].y - this.pointsCtr[i].y)/(this.pointsCtr[i+1].t - this.pointsCtr[i].t) + (this.mCtr[i].y + this.mCtr[i + 1].y);
+            Bx = -Ax + (this.pointsCtr[i+1].x-this.pointsCtr[i].x)/(this.pointsCtr[i+1].t - this.pointsCtr[i].t) - this.mCtr[i].x;
+            By = -Ay + (this.pointsCtr[i+1].y-this.pointsCtr[i].y)/(this.pointsCtr[i+1].t - this.pointsCtr[i].t) - this.mCtr[i].y;
+            x = this.pointsCtr[i].x + (t - this.pointsCtr[i].t)*(this.mCtr[i].x + omega*(Bx + omega * Ax));
+            y = this.pointsCtr[i].y + (t - this.pointsCtr[i].t)*(this.mCtr[i].y + omega*(By + omega * Ay));;
             pt = new Point(x, y);
             this.pointsSpline[j]=pt;
 
