@@ -79,11 +79,6 @@ function main() {
   const viewport = [0, 0, canvas.width, canvas.height];
   gl.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
-  const Xmin = document.getElementById("Xmin");
-  const Xmax = document.getElementById("Xmax");
-  const Ymin = document.getElementById("Ymin");
-  const Ymax = document.getElementById("Ymax");
-  const Z = document.getElementById("Z");
   const N = document.getElementById("N");
   const M = document.getElementById("M");
   const alpha = document.getElementById("alpha");
@@ -119,29 +114,8 @@ function main() {
   visualizeSurfaceWithLines.onclick = function () { Data.plotMode(5); };
   visualizeSurfaceWithSurface.onclick = function () { Data.plotMode(6); };
 
-  Xmin.onchange = function () {
-      Data.generateBoundaryCurves(N.value, 
-          eval(Xmin.value), eval(Xmax.value), eval(Ymin.value), eval(Ymax.value), eval(Z.value));
-  };
-  Xmax.onchange = function () {
-      Data.generateBoundaryCurves(N.value, 
-          eval(Xmin.value), eval(Xmax.value), eval(Ymin.value), eval(Ymax.value), eval(Z.value));
-  };
-  Ymin.onchange = function () {
-      Data.generateBoundaryCurves(N.value, 
-          eval(Xmin.value), eval(Xmax.value), eval(Ymin.value), eval(Ymax.value), eval(Z.value));
-  };
-  Ymax.onchange = function () {
-      Data.generateBoundaryCurves(N.value,
-          eval(Xmin.value), eval(Xmax.value), eval(Ymin.value), eval(Ymax.value), eval(Z.value));
-  };
-  Z.onchange = function () {
-      Data.generateBoundaryCurves(N.value, 
-          eval(Xmin.value), eval(Xmax.value), eval(Ymin.value), eval(Ymax.value), eval(Z.value));
-  };
   N.onchange = function () {
-      Data.generateBoundaryCurves(N.value, 
-          eval(Xmin.value), eval(Xmax.value), eval(Ymin.value), eval(Ymax.value), eval(Z.value));
+      Data.generateBoundaryCurves(N.value);
   };
   M.onchange = function () { Data.plotMode(2); };
   alpha.onchange = function () { Data.plotMode(0); };
@@ -155,8 +129,7 @@ function main() {
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  Data.generateBoundaryCurves(N.value, 
-      eval(Xmin.value), eval(Xmax.value), eval(Ymin.value), eval(Ymax.value), eval(Z.value));
+  Data.generateBoundaryCurves(N.value);
 }
 
 class Point {
@@ -298,13 +271,6 @@ const Data = {
     M: null,
     alpha: null,
     //Area bounds
-    Xmin: 0.0,
-    Xmax: 3 * Math.PI,
-    Ymin: 0.0,
-    Ymax: 3 * Math.PI,
-    Z: 1.5,
-    Xmid: 0.0,
-    Ymid: 0.0,
     xRot: 0,
     yRot: 0,
     wheelDelta: 0.0,
@@ -464,49 +430,91 @@ const Data = {
         this.alpha = alpha;
     },
     setDependentGeomParameters: function () {
-        this.Xmid = this.Xmin + (this.Xmax - this.Xmin) / 2.0;
-        this.Ymid = this.Ymin + (this.Ymax - this.Ymin) / 2.0;
-
-        Camera.r_0 = Math.sqrt(Math.pow((this.Xmax - this.Xmin) / 2.0, 2) +
-           Math.pow((this.Ymax - this.Ymin) / 2.0, 2) +
-           Math.pow(this.Z, 2));
+        Camera.r_0 = Math.sqrt(Math.pow(1.0 / 2.0, 2) +
+           Math.pow(1.0 / 2.0, 2) +
+           Math.pow(0.3, 2));
 
         this.resetCamera(false);
     },
-    c1: function (t, pt) {
-        pt.x = this.Xmin + t * (this.Xmax - this.Xmin) - this.Xmid;
-        pt.y = this.Ymin - this.Ymid;
-        pt.z = this.Z * Math.sin(pt.x) * Math.sin(pt.y);
+    yt: function(x, t) { 
+        // https://en.wikipedia.org/wiki/NACA_airfoil
+        return 5*t*(0.2969*Math.sqrt(x) - 0.1260*x - 0.3516*(x**2) + 0.2843*(x**3) - 0.1015*(x**4));
     },
-    c1_t: function (t, pt) {
-        //ÐÀÑÑ×ÈÒÀÒÜ ÏÐÎÈÇÂÎÄÍÓÞ dc1/dt
-        //pt.x = ;
-        //pt.y = ;
-        //pt.z = ;
+    yt_x: function (x, t) {
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ dyt/dx
+        return 5*t*(0.14845/Math.sqrt(x)-0.126-0.7032*x+0.8529*(x**2)-0.4060*(x**3));
     },
-    c2: function (t, pt) {
-        pt.x = this.Xmin + t * (this.Xmax - this.Xmin) - this.Xmid;
-        pt.y = this.Ymax - this.Ymid;
-        pt.z = this.Z * Math.sin(pt.x) * Math.sin(pt.y);
+    c1: function (u, pt) {
+        const t = 0.3;
+        let x, z;
+        if (u < 0.5) {
+            x = 2*u;
+            z = this.yt(x, t);
+        }
+        else {
+            x = 2*(1-u);
+            z = -this.yt(x, t);
+        }
+
+        pt.x = x - 0.5;
+        pt.y = -0.5;
+        pt.z = z;
     },
-    c2_t: function (t, pt) {
-        //ÐÀÑÑ×ÈÒÀÒÜ ÏÐÎÈÇÂÎÄÍÓÞ dc2/dt
-        //pt.x = ;
-        //pt.y = ;
-        //pt.z = ;
+    c1_u: function (u, pt) {
+        const t = 0.3
+        let x, z;
+        if (u < 0.5) {
+            x = 2;
+            z = this.yt_x(x, t);
+        }
+        else {
+            x = -2;
+            z = -this.yt_x(x, t);
+        }
+
+        pt.x = x - 0.5;
+        pt.y = -0.5;
+        pt.z = z;
     },
-    generateBoundaryCurves: function (n, Xmin, Xmax, Ymin, Ymax, Z) {
+    c2: function (u, pt) {
+        const t = 0.15;
+        let x, z;
+        if (u < 0.5) {
+            x = 2*u;
+            z = this.yt(x, t);
+        }
+        else {
+            x = 2*(1-u);
+            z = -this.yt(x, t);
+        }
+
+        pt.x = x - 0.5;
+        pt.y = 0.5;
+        pt.z = z;
+    },
+    c2_u: function (u, pt) {
+        const t = 0.15;
+        let x, z;
+        if (u < 0.5) {
+            x = 2;
+            z = this.yt_x(x, t);
+        }
+        else {
+            x = -2;
+            z = -this.yt_x(x, t);
+        }
+
+        pt.x = x - 0.5;
+        pt.y = 0.5;
+        pt.z = z;
+    },
+    generateBoundaryCurves: function (n) {
 
         this.verticesC1 = new Float32Array(3 * n);
         this.verticesC2 = new Float32Array(3 * n);
 
         const pt = new Point();
 
-        this.Xmin = Xmin;
-        this.Xmax = Xmax;
-        this.Ymin = Ymin;
-        this.Ymax = Ymax;
-        this.Z = Z;
         this.setDependentGeomParameters();
 
         for (let i = 0; i < n; i++)
@@ -891,10 +899,11 @@ const Data = {
     },
     calculateRuledSurface: function(){
 
-        let i, j;
+        let i, j, tau, t;
+        let pt;
 
-        const N = this.N.value;
-        const M = this.M.value;
+        const N = eval(this.N.value);
+        const M = eval(this.M.value);
 
         this.pointsSurface = new Array(N);
         this.normalsSurface = new Array(N);
@@ -908,45 +917,47 @@ const Data = {
         const pt1 = new Point();
         const pt2 = new Point();
 
-        const pt1_t = new Point();
-        const pt2_t = new Point();
+        const pt1_u = new Point();
+        const pt2_u = new Point();
 
-        //// ÄÎÁÀÂÈÒÜ ÊÎÄ ÐÀÑ×ÅÒÀ ÒÎ×ÅÊ ËÈÍÅÉ×ÀÒÎÉ ÏÎÂÅÐÕÍÎÑÒÈ
-        //for (i = 0; i < N; i++) {
-        //    for (j = 0; j < M; j++) {
-        //        this.c1(t, pt1);
-        //        this.c2(t, pt2);
+        for (i = 0; i < N; i++) {
+			t = i/(N-1);
+			this.c1(t, pt1);
+			this.c2(t, pt2);
+			this.c1_u(t, pt1_u);
+			this.c2_u(t, pt2_u);
+           for (j = 0; j < M; j++) {
+				tau = j/(M-1);
 
-        //        const x = ;
-        //        const y = ;
-        //        const z = ;
+				const x = pt1.x * (1 - tau) + pt2.x * tau;
+				const y = pt1.y * (1 - tau) + pt2.y * tau;
+				const z = pt1.z * (1 - tau) + pt2.z * tau;
 
-        //        pt = new Point(x, y, z);
-        //        this.pointsSurface[i][j] = pt;
+				pt = new Point(x, y, z);
+				this.pointsSurface[i][j] = pt;
 
-        //        //calculate tangent vectors
-        //        this.c1_t(t, pt1_t);
-        //        this.c2_t(t, pt2_t);
-        
-        //        const x_t = ;
-        //        const y_t = ;
-        //        const z_t = ;
-                  
-        //        const x_tau = ;
-        //        const y_tau = ;
-        //        const z_tau = ;
-                  
-        //        const pt_t = vec3.fromValues(x_t, y_t, z_t);
-        //        const pt_tau = vec3.fromValues(x_tau, y_tau, z_tau);
-                  
-        //        //CALCULATE NORMAL VECTOR
-        //        const normal = vec3.create();
-                  
-        //        this.normalsSpline[i][j][0] = normal[0];
-        //        this.normalsSpline[i][j][1] = normal[1];
-        //        this.normalsSpline[i][j][2] = normal[2];
-        //    }
-        //}
+				// calculate tangent vectors
+				const x_t = pt1_u.x * (1 - tau) + pt2_u.x * tau;
+				const y_t = pt1_u.y * (1 - tau) + pt2_u.y * tau;
+				const z_t = pt1_u.z * (1 - tau) + pt2_u.z * tau
+
+				const x_tau = pt2.x - pt1.x;
+				const y_tau = pt2.y - pt1.y;
+				const z_tau = pt2.z - pt1.z;
+				  
+				const pt_t = vec3.fromValues(x_t, y_t, z_t);
+				const pt_tau = vec3.fromValues(x_tau, y_tau, z_tau);
+				  
+				// CALCULATE NORMAL VECTOR
+
+				let normal = vec3.create();
+				normal = vec3.cross(normal, pt_t, pt_tau);
+
+				this.normalsSurface[i][j][0] = normal[0];
+				this.normalsSurface[i][j][1] = normal[1];
+				this.normalsSurface[i][j][2] = normal[2];
+           }
+        }
 
         this.verticesSurface = new Float32Array(N * M * 6);
         for (i = 0; i < N; i++)
@@ -965,8 +976,6 @@ const Data = {
 }
 
 function mousedown(ev, canvas) {
-    event = EventUtil.getEvent(event);
-
     const x = ev.clientX; // x coordinate of a mouse pointer
     const y = ev.clientY; // y coordinate of a mouse pointer
     const rect = ev.target.getBoundingClientRect();
@@ -975,8 +984,6 @@ function mousedown(ev, canvas) {
 }
 
 function mouseup(ev, canvas) {
-    event = EventUtil.getEvent(event);
-
     const x = ev.clientX; // x coordinate of a mouse pointer
     const y = ev.clientY; // y coordinate of a mouse pointer
     const rect = ev.target.getBoundingClientRect();
